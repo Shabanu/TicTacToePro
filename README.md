@@ -16,3 +16,5 @@ To run this project locally:
 1. Clone the repository.
 2. Install the required packages: `pip install flask`.
 3. Run the application: `python app.py`.
+
+<img src="Screenshot 2026-04-24 140538.png" width="500">
