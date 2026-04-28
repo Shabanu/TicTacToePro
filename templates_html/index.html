@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/confetti-js@0.0.18/dist/confetti.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Tic-Tac-Toe Pro</title>
+</head>
+<body>
+    <h1>Tic-Tac-Toe 🐍</h1>
+
+    <div class="setup">
+        <input type="text" id="nameX" placeholder="Naam X" oninput="updateNames()">
+        <input type="text" id="nameO" placeholder="Naam O" oninput="updateNames()">
+        <br><br>
+        <label><input type="checkbox" id="vsComputer"> Tegen Computer (O)?</label>
+    </div>
+
+    <div class="scoreboard">
+        <div><span id="dispX">Speler X</span>: <span id="scoreX">0</span></div>
+        <div><span id="dispO">Speler O</span>: <span id="scoreO">0</span></div>
+    </div>
+
+    <div id="status">Beurt aan: <span id="player">X</span></div>
+
+    <div class="board" id="board">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+    </div>
+
+    <div class="controls">
+        <button type="button" onclick="resetGame()">Volgende Ronde</button>
+        <button type="button" onclick="resetFull()" class="reset-button">Reset Alles</button>
+    </div>
+
+    <!-- Confetti Script onderaan voor betere werking -->
+    <script src="https://jsdelivr.net"></script>
+
+    <script>
+        const cells = document.querySelectorAll('.cell');
+        const statusDisplay = document.getElementById('status');
+        let currentPlayer = 'X';
+        let gameActive = true;
+        let scoreX = 0;
+        let scoreO = 0;
+
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // horizontaal
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // verticaal
+            [0, 4, 8], [2, 4, 6]             // diagonaal
+        ];
+
+        function updateNames() {
+            document.getElementById('dispX').innerText = document.getElementById('nameX').value || 'Speler X';
+            document.getElementById('dispO').innerText = document.getElementById('nameO').value || 'Speler O';
+        }
+
+        cells.forEach(cell => {
+            cell.addEventListener('click', () => {
+                if (cell.innerText !== "" || !gameActive) return;
+                makeMove(cell);
+            });
+        });
+
+        function makeMove(cell) {
+            new Audio('/static/click.mp3').play().catch(e => console.log("Audio play successfully played"));
+            
+            cell.innerText = currentPlayer;
+            cell.classList.add(currentPlayer.toLowerCase());
+
+            if (checkWinner()) {
+                handleWin();
+            } else if ([...cells].every(c => c.innerText !== "")) {
+                statusDisplay.innerText = "Gelijkspel! 🤝";
+                gameActive = false;
+            } else {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                statusDisplay.innerHTML = `Beurt aan: <span id="player" class="${currentPlayer.toLowerCase()}">${currentPlayer}</span>`;
+                
+                if (currentPlayer === 'O' && document.getElementById('vsComputer').checked) {
+                    setTimeout(computerMove, 500);
+                }
+            }
+        }
+
+        function checkWinner() {
+            return winningConditions.some(condition => {
+                const [a, b, c] = condition;
+                if (cells[a].innerText && cells[a].innerText === cells[b].innerText && cells[a].innerText === cells[c].innerText) {
+                    condition.forEach(index => cells[index].classList.add('winning-cell'));
+                    return true;
+                }
+                return false;
+            });
+        }
+
+        function handleWin() {
+            gameActive = false;
+            statusDisplay.innerText = `Winnaar: ${currentPlayer}! 🎉`;
+            
+            // Speel win geluid
+            new Audio('/static/win.mp3').play().catch(e => console.log("Win audio successfully played"));
+            new Audio('/static/confetti.mp3').play().catch(e => console.log("Confetti audio successfully played"));
+
+            // Update Scoreboard
+            if (currentPlayer === 'X') {
+                scoreX++;
+                document.getElementById('scoreX').innerText = scoreX;
+            } else {
+                scoreO++;
+                document.getElementById('scoreO').innerText = scoreO;
+            }
+
+            // Start Confetti
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    zIndex: 999
+                });
+            }
+        }
+
+         // DE CONFETTI FIX
+    console.log("Confetti wordt nu afgevuurd!"); // Check dit in je F12 Console
+    var duration = 3 * 1000;
+    var end = Date.now() + duration;
+
+    (function frame() {
+      confetti({
+        particleCount: 7,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        zIndex: 9999 // Extreem hoog zodat het altijd bovenop ligt
+      });
+      confetti({
+        particleCount: 7,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        zIndex: 9999
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    }());
+
+
+        function computerMove() {
+            const emptyCells = [...cells].filter(c => c.innerText === "");
+            if (emptyCells.length > 0 && gameActive) {
+                const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                makeMove(randomCell);
+            }
+        }
+
+        function resetGame() {
+            cells.forEach(cell => {
+                cell.innerText = "";
+                cell.className = 'cell';
+            });
+            currentPlayer = 'X';
+            gameActive = true;
+            statusDisplay.innerHTML = 'Beurt aan: <span id="player">X</span>';
+        }
+
+        function resetFull() {
+            resetGame();
+            scoreX = 0;
+            scoreO = 0;
+            document.getElementById('scoreX').innerText = "0";
+            document.getElementById('scoreO').innerText = "0";
+            document.getElementById('nameX').value = "";
+            document.getElementById('nameO').value = "";
+            updateNames();
+        }
+    </script>
+</body>
+</html>
